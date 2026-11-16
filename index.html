@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1e293b">
+<title>근무달력 v1.0</title>
+
+<style>
+:root {
+  --bg:#f8fafc;
+  --panel:#ffffff;
+  --ink:#1e293b;
+  --muted:#64748b;
+  --line:#e2e8f0;
+  --primary:#2563eb;
+  --primary-light:#eff6ff;
+  --off:#fecaca;
+  --offink:#991b1b;
+  --today:#fef3c7;
+  --holiday:#ef4444;
+}
+
+* { box-sizing:border-box; }
+
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;
+}
+
+main {
+  max-width:1000px;
+  margin:0 auto;
+  padding:16px;
+}
+
+header {
+  background:linear-gradient(135deg, #1e293b, #0f172a);
+  color:white;
+  border-radius:14px;
+  padding:14px 18px;
+  margin-bottom:12px;
+  box-shadow:0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+header h1 {
+  font-size:20px;
+  margin:0;
+  font-weight:700;
+  letter-spacing:-0.5px;
+}
+
+.control-panel {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.toolbar {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--line);
+}
+
+.toolbar-group {
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+
+.toolbar button {
+  font:inherit;
+  font-size:13px;
+  font-weight:600;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:6px 12px;
+  background:#f8fafc;
+  color:var(--ink);
+  transition:all 0.15s ease;
+  cursor:pointer;
+}
+
+.toolbar button:hover {
+  background:#f1f5f9;
+  border-color:#cbd5e1;
+}
+
+.month-label {
+  font-size:18px;
+  font-weight:800;
+  color:var(--ink);
+  letter-spacing:-0.5px;
+}
+
+.teams-label {
+  font-size:11px;
+  font-weight:700;
+  color:var(--muted);
+  margin-bottom:6px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+.teams {
+  display:grid;
+  grid-template-columns:repeat(6, 1fr);
+  gap:6px;
+}
+
+.team {
+  font:inherit;
+  font-size:13px;
+  font-weight:800;
+  border:2px solid transparent;
+  border-radius:10px;
+  padding:8px 0;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.15s ease;
+  box-shadow:0 1px 3px rgba(0,0,0,0.04);
+}
+
+.team[data-team="A"] { background:#eff6ff; color:#1d4ed8; border-color:#dbeafe; }
+.team[data-team="C"] { background:#f0fdf4; color:#15803d; border-color:#dcfce7; }
+.team[data-team="D"] { background:#fef2f2; color:#b91c1c; border-color:#fee2e2; }
+.team[data-team="F"] { background:#fdf4ff; color:#a21caf; border-color:#fae8ff; }
+.team[data-team="G"] { background:#fff7ed; color:#c2410c; border-color:#ffedd5; }
+.team[data-team="I"] { background:#f5f3ff; color:#6d28d9; border-color:#ede9fe; }
+
+.team.active {
+  box-shadow:0 0 0 2px var(--ink), 0 4px 12px rgba(0,0,0,0.1);
+  transform:translateY(-1px);
+}
+
+.team[data-team="A"].active { background:#2563eb; color:white; border-color:#1d4ed8; }
+.team[data-team="C"].active { background:#16a34a; color:white; border-color:#15803d; }
+.team[data-team="D"].active { background:#dc2626; color:white; border-color:#b91c1c; }
+.team[data-team="F"].active { background:#c026d3; color:white; border-color:#a21caf; }
+.team[data-team="G"].active { background:#ea580c; color:white; border-color:#c2410c; }
+.team[data-team="I"].active { background:#7c3aed; color:white; border-color:#6d28d9; }
+
+.panel {
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.legend {
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--line);
+}
+
+.dot {
+  display:inline-block;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  margin-right:4px;
+}
+
+.calendar {
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  gap:5px;
+}
+
+.weekday {
+  text-align:center;
+  font-weight:700;
+  color:var(--muted);
+  padding:6px 0;
+  font-size:12px;
+}
+
+.weekday:first-child { color:#ef4444; }
+
+.day {
+  min-height:90px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:white;
+  padding:6px;
+  display:flex;
+  flex-direction:column;
+  align-items:center; /* 칸 내부 요소를 가로 가운데 정렬 */
+  gap:3px;
+  min-width:0;
+}
+
+.day.out {
+  opacity:.35;
+  background:#f8fafc;
+}
+
+.date {
+  font-size:12px;
+  font-weight:700;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:28px;
+  min-height:24px;
+  padding:2px 6px;
+  border-radius:6px;
+  width:max-content;
+}
+
+.day.off-day .date {
+  background:var(--off);
+  color:var(--offink);
+}
+
+.day.today {
+  outline:2px solid #f59e0b;
+  outline-offset:-1px;
+  background:var(--today);
+}
+
+.pattern {
+  font-size:clamp(11px, 1.8vw, 13px);
+  font-weight:800;
+  letter-spacing:0.2px;
+  color:#334155;
+  text-align:center; /* 패턴 글자 가운데 정렬 */
+  overflow-wrap:anywhere;
+}
+
+.holiday-name {
+  font-size:10px;
+  font-weight:700;
+  color:#ef4444;
+  text-align:center; /* 공휴일 이름 가운데 정렬 */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.day.sun .date,
+.day.holiday .date {
+  color:#ef4444;
+}
+
+.today-tag {
+  font-size:9px;
+  color:#92400e;
+  font-weight:800;
+  text-align:center;
+}
+
+footer.note {
+  font-size:11px;
+  color:var(--muted);
+  text-align:center;
+  padding:6px;
+}
+
+@media(max-width:600px) {
+  main { padding:10px; }
+  .control-panel, .panel { padding:10px; }
+  .day {
+    min-height:72px;
+    padding:4px;
+    gap:2px;
+  }
+  .date { font-size:11px; min-width:24px; min-height:20px; }
+  .pattern { font-size:11px; }
+  .weekday { font-size:11px; }
+  .holiday-name { font-size:9px; }
+  .team { font-size:12px; padding:6px 0; }
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<header>
+  <h1>근무달력 <span style="font-size:0.6em;font-weight:500;opacity:0.8">v1.0</span></h1>
+</header>
+
+<section class="control-panel">
+  <div class="toolbar">
+    <div class="month-label" id="monthLabel"></div>
+    <div class="toolbar-group">
+      <button id="prev">‹ 이전</button>
+      <button id="todayBtn">오늘</button>
+      <button id="next">다음 ›</button>
+    </div>
+  </div>
+
+  <div class="teams-label">근무조 선택</div>
+  <div class="teams" id="teams"></div>
+</section>
+
+<section class="panel">
+  <div class="legend">
+    <span><i class="dot" style="background:#fecaca"></i>선택조 휴무일</span>
+    <span><i class="dot" style="background:#fef3c7; border:1px solid #f59e0b"></i>오늘</span>
+    <span><i class="dot" style="background:#ef4444"></i>공휴일·일요일</span>
+  </div>
+
+  <div class="calendar" id="calendar"></div>
+</section>
+
+<footer class="note">
+  근무달력 v1.0 · 패턴 기준일 2026.06.01 · 63일 순환
+</footer>
+
+</main>
+
+<script>
+const cycle = [
+  "EF","GH","IA","IAB","CDE","FGH","FGH",
+  "IA","BC","DE","DEF","GHI","ABC","ABC",
+  "DE","FG","HI","HIA","BCD","EFG","EFG",
+  "HI","AB","CD","CDE","FGH","IAB","IAB",
+  "CD","EF","GH","GHI","ABC","DEF","DEF",
+  "GH","IA","BC","BCD","EFG","HIA","HIA",
+  "BC","DE","FG","FGH","IAB","CDE","CDE",
+  "FG","HI","AB","ABC","DEF","GHI","GHI",
+  "AB","CD","EF","EFG","HIA","BCD","BCD"
+];
+
+const anchor = new Date(2026, 5, 1);
+const teams = ["A","C","D","F","G","I"];
+let selected = localStorage.getItem("workCalendarTeam") || "A";
+
+const today = new Date();
+let view = new Date(today.getFullYear(), today.getMonth(), 1);
+
+function getHolidays(year) {
+  const h = {};
+  h[`${year}-01-01`] = "신정";
+  h[`${year}-03-01`] = "삼일절";
+  h[`${year}-05-05`] = "어린이날";
+  h[`${year}-06-06`] = "현충일";
+  h[`${year}-08-15`] = "광복절";
+  h[`${year}-10-03`] = "개천절";
+  h[`${year}-10-09`] = "한글날";
+  h[`${year}-12-25`] = "성탄절";
+
+  const lunarHolidays = {
+    2026: [
+      ["2026-02-16", "설날전일"], ["2026-02-17", "설날"], ["2026-02-18", "설날연휴"],
+      ["2026-05-24", "부처님오신날"], ["2026-09-24", "추석전일"], ["2026-09-25", "추석"], ["2026-09-26", "추석연휴"], ["2026-09-28", "대체공휴일"]
+    ],
+    2027: [
+      ["2027-02-06", "설날연휴"], ["2027-02-07", "설날"], ["2027-02-08", "설날연휴"],
+      ["2027-05-13", "부처님오신날"], ["2027-09-14", "추석전일"], ["2027-09-15", "추석"], ["2027-09-16", "추석연휴"]
+    ],
+    2028: [
+      ["2028-01-26", "설날전일"], ["2028-01-27", "설날"], ["2028-01-28", "설날연휴"],
+      ["2028-05-02", "부처님오신날"], ["2028-10-02", "추석전일"], ["2028-10-03", "추석"], ["2028-10-04", "추석연휴"]
+    ],
+    2029: [
+      ["2029-02-12", "설날전일"], ["2029-02-13", "설날"], ["2029-02-14", "설날연휴"],
+      ["2029-05-20", "부처님오신날"], ["2029-09-21", "추석전일"], ["2029-09-22", "추석"], ["2029-09-23", "추석연휴"]
+    ],
+    2030: [
+      ["2030-02-02", "설날전일"], ["2030-02-03", "설날"], ["2030-02-04", "설날연휴"],
+      ["2030-05-09", "부처님오신날"], ["2030-09-11", "추석전일"], ["2030-09-12", "추석"], ["2030-09-13", "추석연휴"]
+    ]
+  };
+
+  if (lunarHolidays[year]) {
+    lunarHolidays[year].forEach(([d, name]) => {
+      h[d] = name;
+    });
+  }
+  return h;
+}
+
+function patternFor(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const days = Math.round((d - anchor) / 86400000);
+  const index = ((days % cycle.length) + cycle.length) % cycle.length;
+  return cycle[index];
+}
+
+function renderTeams() {
+  const root = document.getElementById("teams");
+  root.innerHTML = "";
+
+  teams.forEach(t => {
+    const b = document.createElement("button");
+    b.className = "team" + (selected === t ? " active" : "");
+    b.textContent = t + "조";
+    b.setAttribute("data-team", t);
+    b.setAttribute("aria-pressed", selected === t);
+
+    b.onclick = () => {
+      selected = t;
+      localStorage.setItem("workCalendarTeam", t);
+      renderTeams();
+      renderCalendar();
+    };
+
+    root.appendChild(b);
+  });
+}
+
+function renderCalendar() {
+  const y = view.getFullYear();
+  const m = view.getMonth();
+
+  document.getElementById("monthLabel").textContent = `${y}년 ${m+1}월`;
+
+  const root = document.getElementById("calendar");
+  root.innerHTML = "";
+
+  ["일","월","화","수","목","금","토"].forEach(w => {
+    const e = document.createElement("div");
+    e.className = "weekday";
+    e.textContent = w;
+    root.appendChild(e);
+  });
+
+  const holidays = getHolidays(y);
+
+  const first = new Date(y, m, 1);
+  const offset = first.getDay();
+  const days = new Date(y, m + 1, 0).getDate();
+  const total = Math.ceil((offset + days) / 7) * 7;
+
+  for(let i = 0; i < total; i++) {
+    const date = new Date(y, m, 1 - offset + i);
+    const inMonth = date.getMonth() === m;
+    const p = patternFor(date);
+    const off = p.includes(selected);
+    const isToday = date.toDateString() === today.toDateString();
+    const isSun = date.getDay() === 0;
+
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const dateKey = `${yyyy}-${mm}-${dd}`;
+    const holidayName = holidays[dateKey];
+    const isHoliday = !!holidayName;
+
+    const cell = document.createElement("div");
+    cell.className = "day" +
+      (!inMonth ? " out" : "") +
+      (off ? " off-day" : "") +
+      (isToday ? " today" : "") +
+      (isSun ? " sun" : "") +
+      (isHoliday ? " holiday" : "");
+
+    const dateEl = document.createElement("div");
+    dateEl.className = "date";
+    dateEl.textContent = `${date.getMonth()+1}/${date.getDate()}`;
+    cell.appendChild(dateEl);
+
+    if (holidayName) {
+      const hEl = document.createElement("div");
+      hEl.className = "holiday-name";
+      hEl.textContent = holidayName.length > 3 ? holidayName.substring(0, 3) : holidayName;
+      cell.appendChild(hEl);
+    }
+
+    const pat = document.createElement("div");
+    pat.className = "pattern";
+    pat.textContent = p;
+    cell.appendChild(pat);
+
+    if(isToday) {
+      const tag = document.createElement("div");
+      tag.className = "today-tag";
+      tag.textContent = "오늘";
+      cell.appendChild(tag);
+    }
+
+    root.appendChild(cell);
+  }
+}
+
+function shiftMonth(n) {
+  view = new Date(view.getFullYear(), view.getMonth() + n, 1);
+  renderCalendar();
+}
+
+document.getElementById("prev").onclick = () => { shiftMonth(-1); };
+document.getElementById("next").onclick = () => { shiftMonth(1); };
+
+document.getElementById("todayBtn").onclick = () => {
+  view = new Date(today.getFullYear(), today.getMonth(), 1);
+  renderCalendar();
+};
+
+renderTeams();
+renderCalendar();
+</script>
+</body>
+</html>
